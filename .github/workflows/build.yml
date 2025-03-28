@@ -13,54 +13,56 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
 
-      - name: Set npm registry
-        run: |
-          yarn config set registry https://registry.yarnpkg.com
+    - name: Set npm registry
+      run: |
+        yarn config set registry https://registry.yarnpkg.com
 
-      - name: Increase Yarn network timeout
-        run: |
-          yarn config set network-timeout 600000
+    - name: Increase Yarn network timeout
+      run: |
+        yarn config set network-timeout 600000
 
-      - name: Install dependencies
-        run: yarn install
+    - name: Install dependencies
+      run: yarn install
 
-      - name: Build project
-        run: |
-          $env:TSC_COMPILE_ON_ERROR = "true"
-          $env:SKIP_PREFLIGHT_CHECK = "true"
-          yarn build-prod
+    - name: Build project
+      run: |
+        # Skip TypeScript type checking by setting the environment variable
+        $env:TSC_COMPILE_ON_ERROR = "true"
+        # Skip other checks by setting related environment variables if needed
+        $env:SKIP_PREFLIGHT_CHECK = "true"
+        yarn build-prod
 
-      - name: Package for x64
-        run: yarn pack:x64
+    - name: Package for x64
+      run: yarn pack:x64
 
-      - name: Ensure bin directory exists
-        run: |
-          if (!(Test-Path -Path "./bin")) {
-            New-Item -ItemType Directory -Force -Path "./bin"
-          }
+    - name: Ensure bin directory exists
+      run: |
+        if (!(Test-Path -Path "./bin")) {
+          New-Item -ItemType Directory -Force -Path "./bin"
+        }
 
-      - name: Move package to bin directory
-        run: |
-          $outputPath = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -ExpandProperty FullName
-          $fileName = [System.IO.Path]::GetFileName($outputPath)
-          $destinationPath = Join-Path -Path "./bin" -ChildPath $fileName
+    - name: Move package to bin directory
+      run: |
+        $outputPath = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -ExpandProperty FullName
+        $fileName = [System.IO.Path]::GetFileName($outputPath)
+        $destinationPath = Join-Path -Path "./bin" -ChildPath $fileName
 
-          if (Test-Path -Path $destinationPath) {
-            Remove-Item -Path $destinationPath -Force
-          }
+        if (Test-Path -Path $destinationPath) {
+          Remove-Item -Path $destinationPath -Force
+        }
 
-          Move-Item -Path $outputPath -Destination $destinationPath
+        Move-Item -Path $outputPath -Destination $destinationPath
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: electron-app
-          path: bin/
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: electron-app
+        path: bin/
