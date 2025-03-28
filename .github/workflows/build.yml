@@ -21,11 +21,6 @@ jobs:
       with:
         node-version: '16'
 
-    - name: Install Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-
     - name: Set npm registry
       run: |
         yarn config set registry https://registry.yarnpkg.com
@@ -57,17 +52,10 @@ jobs:
     - name: Move package to bin directory
       run: |
         $outputPath = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -ExpandProperty FullName
-        $fileName = [System.IO.Path]::GetFileName($outputPath)
-        $destinationPath = Join-Path -Path "./bin" -ChildPath $fileName
-
-        if (Test-Path -Path $destinationPath) {
-          Remove-Item -Path $destinationPath -Force
-        }
-
-        Move-Item -Path $outputPath -Destination $destinationPath
+        Move-Item -Path $outputPath -Destination "./bin"
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v2
       with:
         name: electron-app
         path: bin/
