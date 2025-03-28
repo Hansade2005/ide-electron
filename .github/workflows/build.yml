@@ -55,7 +55,7 @@ jobs:
         Move-Item -Path $outputPath -Destination "./bin"
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: electron-app
         path: bin/
