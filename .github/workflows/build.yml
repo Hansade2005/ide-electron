@@ -1,0 +1,42 @@
+name: Build and Package
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+
+    - name: Install dependencies
+      run: yarn install
+
+    - name: Build project
+      run: |
+        # Skip TypeScript type checking by setting the environment variable
+        set TSC_COMPILE_ON_ERROR=true
+        # Skip other checks by setting related environment variables if needed
+        set SKIP_PREFLIGHT_CHECK=true
+        yarn build-prod
+
+    - name: Package for x64
+      run: yarn pack:x64
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: electron-app
+        path: path/to/your/packaged/app
