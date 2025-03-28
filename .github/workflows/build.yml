@@ -27,16 +27,27 @@ jobs:
     - name: Build project
       run: |
         # Skip TypeScript type checking by setting the environment variable
-        set TSC_COMPILE_ON_ERROR=true
+        $env:TSC_COMPILE_ON_ERROR = "true"
         # Skip other checks by setting related environment variables if needed
-        set SKIP_PREFLIGHT_CHECK=true
+        $env:SKIP_PREFLIGHT_CHECK = "true"
         yarn build-prod
 
     - name: Package for x64
       run: yarn pack:x64
 
+    - name: Ensure bin directory exists
+      run: |
+        if (!(Test-Path -Path "./bin")) {
+          New-Item -ItemType Directory -Force -Path "./bin"
+        }
+
+    - name: Move package to bin directory
+      run: |
+        $outputPath = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -ExpandProperty FullName
+        Move-Item -Path $outputPath -Destination "./bin"
+
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v2
       with:
         name: electron-app
-        path: path/to/your/packaged/app
+        path: bin/
