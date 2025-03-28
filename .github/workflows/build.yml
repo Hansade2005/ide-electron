@@ -43,18 +43,16 @@ jobs:
     - name: Package for x64
       run: yarn pack:x64
 
-    - name: Ensure bin directory is clean
+    - name: Ensure bin directory exists
       run: |
-        if (Test-Path -Path "./bin") {
-          Remove-Item -Path "./bin/*" -Force
-        } else {
+        if (!(Test-Path -Path "./bin")) {
           New-Item -ItemType Directory -Force -Path "./bin"
         }
 
     - name: Move package to bin directory
       run: |
         $outputPath = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -ExpandProperty FullName
-        Move-Item -Path $outputPath -Destination "./bin" -Force
+        Move-Item -Path $outputPath -Destination "./bin"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
