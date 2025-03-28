@@ -21,6 +21,14 @@ jobs:
       with:
         node-version: '16'
 
+    - name: Set npm registry
+      run: |
+        yarn config set registry https://registry.yarnpkg.com
+
+    - name: Increase Yarn network timeout
+      run: |
+        yarn config set network-timeout 600000
+
     - name: Install dependencies
       run: yarn install
 
