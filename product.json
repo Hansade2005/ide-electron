@@ -1,9 +1,9 @@
 {
-  "productName": "OpenSumi-OSS",
-  "applicationName": "sumi-oss",
-  "dataFolderName": ".sumi-oss",
+  "productName": "Optima IDE",
+  "applicationName": "optima-oss",
+  "dataFolderName": ".optima-oss",
   "version": "1.3.6",
-  "urlProtocol": "sumi-oss",
+  "urlProtocol": "optima-oss",
   "serverApp": { "marketplace": {} },
   "devtoolFrontendUrl": "",
   "sumiVersion": ""
