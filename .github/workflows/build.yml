@@ -47,7 +47,7 @@ jobs:
       # 5.5 Rebuild native dependencies
       - name: Rebuild native dependencies
         run: |
-          yarn rebuild-native
+          yarn rebuild-native --target=electron
           yarn electron-builder install-app-deps
 
       # 6. Package for x64
