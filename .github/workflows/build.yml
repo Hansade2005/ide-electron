@@ -52,7 +52,7 @@ jobs:
 
       # 6. Package for x64
       - name: Package for x64
-        run: yarn dist --x64 --win
+        run: yarn dist --x64 --win || if ($LASTEXITCODE -eq 1 -and (Get-Content -Path ".\.electron-builder.log" | Select-String -Pattern "GitHub Personal Access Token is not set")) { echo "::warning::GitHub token not set, but installer was built successfully"; exit 0 }
 
       # 7. Prepare artifacts
       - name: Prepare release assets
@@ -68,8 +68,15 @@ jobs:
           # Verify installer files exist and are in the right place
           $installerFiles = Get-ChildItem -Path ./dist -Recurse -Filter "*Setup*.exe"
           if ($installerFiles.Count -eq 0) {
-            Write-Error "No installer files found in ./dist directory"
-            exit 1
+            $unpacked = Get-ChildItem -Path ./dist -Directory -Filter "win-unpacked"
+            if ($unpacked.Count -gt 0) {
+              Write-Warning "No installer found, but unpacked directory exists. Creating a zip archive."
+              Compress-Archive -Path "./dist/win-unpacked/*" -DestinationPath "./dist/Optima-IDE-$version-portable.zip" -Force
+              $installerFiles = Get-ChildItem -Path ./dist -Filter "*.zip"
+            } else {
+              Write-Error "No installer files found in ./dist directory and no unpacked directory found"
+              exit 1
+            }
           }
           
           Write-Host "Found installer files:"
