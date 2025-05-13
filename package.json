@@ -9,6 +9,7 @@
     "start": "electron --inspect=9229 .",
     "start:no-dev": "electron .",
     "link-local": "node ./scripts/link-local.js",
+    "postinstall": "electron-builder install-app-deps",
     "build:browser": "webpack --config ./build/webpack.browser.config.js ",
     "build:node": "webpack --config ./build/webpack.node.config.js ",
     "build:extension": "webpack --config ./build/webpack.extension-host.config.js ",

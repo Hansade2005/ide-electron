@@ -44,9 +44,15 @@ jobs:
           $env:SKIP_PREFLIGHT_CHECK = "true"
           yarn build-prod
 
+      # 5.5 Rebuild native dependencies
+      - name: Rebuild native dependencies
+        run: |
+          yarn rebuild-native
+          yarn electron-builder install-app-deps
+
       # 6. Package for x64
       - name: Package for x64
-        run: yarn build-prod && yarn dist
+        run: yarn dist --x64 --win
 
       # 7. Prepare artifacts
       - name: Prepare release assets
