@@ -144,5 +144,17 @@
   "dependencies": {
     "@opensumi/ide-ai-native": "3.2.1",
     "@opensumi/ide-design": "3.2.1"
+  },
+  "build": {
+    "appId": "com.optimaide.app",
+    "productName": "Optima IDE",
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
