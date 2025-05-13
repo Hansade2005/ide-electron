@@ -45,7 +45,7 @@ jobs:
 
       # 6. Package for x64
       - name: Package for x64
-        run: yarn pack:x64
+        run: yarn dist
 
       # 7. Prepare artifacts
       - name: Prepare release assets
@@ -54,11 +54,13 @@ jobs:
             New-Item -ItemType Directory -Force -Path "./bin"
           }
           $exeFile = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -First 1
-          Move-Item -Path $exeFile.FullName -Destination "./bin/app.exe"
-          
           # Create a release tag (optional)
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+
+          Get-ChildItem -Path ./dist | ForEach-Object {
+            Move-Item -Path $_.FullName -Destination ./bin
+          }
 
       # 8. Upload build artifact (temporary storage)
       - name: Upload build artifact
@@ -85,6 +87,6 @@ jobs:
           tag_name: v${{ env.RELEASE_VERSION }}
           name: Release v${{ env.RELEASE_VERSION }}
           body: "Auto-generated release for Electron app"
-          files: bin/app.exe
+          files: bin/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
