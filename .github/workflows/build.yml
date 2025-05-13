@@ -17,7 +17,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Node.js 20
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
+        timeout-minutes: 5
         with:
           node-version: '20'
           cache: 'yarn'
@@ -45,7 +46,7 @@ jobs:
 
       # 6. Package for x64
       - name: Package for x64
-        run: yarn dist
+        run: yarn dist --dir=dist
 
       # 7. Prepare artifacts
       - name: Prepare release assets
@@ -53,13 +54,26 @@ jobs:
           if (!(Test-Path -Path "./bin")) {
             New-Item -ItemType Directory -Force -Path "./bin"
           }
-          $exeFile = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -First 1
-          # Create a release tag (optional)
+          
+          # Create a release tag from package.json version
           $version = (Get-Content package.json | ConvertFrom-Json).version
           echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
-
+          
+          # Verify installer files exist and are in the right place
+          $installerFiles = Get-ChildItem -Path ./dist -Recurse -Filter "*Setup*.exe"
+          if ($installerFiles.Count -eq 0) {
+            Write-Error "No installer files found in ./dist directory"
+            exit 1
+          }
+          
+          Write-Host "Found installer files:"
+          $installerFiles | ForEach-Object {
+            Write-Host "- $($_.Name) ($($_.Length / 1MB) MB)"
+          }
+          
+          # Copy all files from dist to bin
           Get-ChildItem -Path ./dist | ForEach-Object {
-            Move-Item -Path $_.FullName -Destination ./bin
+            Copy-Item -Path $_.FullName -Destination ./bin -Recurse -Force
           }
 
       # 8. Upload build artifact (temporary storage)
