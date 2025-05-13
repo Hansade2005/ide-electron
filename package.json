@@ -1,6 +1,7 @@
 {
   "name": "optima-ide",
   "private": true,
+  "author": "Hans",
   "version": "1.0.0",
   "description": "Optima IDE",
   "main": "./app/main/index.js",
