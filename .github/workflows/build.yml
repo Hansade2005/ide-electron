@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch: # This enables manual triggering
+  workflow_dispatch: # Enable manual triggering
 
 jobs:
   build:
@@ -22,22 +22,28 @@ jobs:
       with:
         node-version: '16'
 
+    - name: Install Windows Build Tools
+      run: |
+        npm install -g windows-build-tools
+        yarn config set msvs_version 2022
+
     - name: Set npm registry
       run: |
         yarn config set registry https://registry.yarnpkg.com
+        
     - name: Increase Yarn network timeout
       run: |
         yarn config set network-timeout 600000
+        
     - name: Install dependencies
       run: yarn install
 
     - name: Build project
       run: |
-        # Skip TypeScript type checking by setting the environment variable
         $env:TSC_COMPILE_ON_ERROR = "true"
-        # Skip other checks by setting related environment variables if needed
         $env:SKIP_PREFLIGHT_CHECK = "true"
         yarn build-prod
+        
     - name: Package for x64
       run: yarn pack:x64
 
@@ -46,10 +52,12 @@ jobs:
         if (!(Test-Path -Path "./bin")) {
           New-Item -ItemType Directory -Force -Path "./bin"
         }
+        
     - name: Move package to bin directory
       run: |
         $outputPath = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -ExpandProperty FullName
         Move-Item -Path $outputPath -Destination "./bin"
+        
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
