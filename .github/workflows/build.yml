@@ -1,67 +1,90 @@
-name: Build and Package
+name: Build, Package, and Release
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
-  workflow_dispatch: # Enable manual triggering
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      # 1. Checkout and Node.js setup
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16'
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'yarn'
 
-    - name: Set npm registry & timeout
-      run: |
-        yarn config set registry https://registry.yarnpkg.com
-        yarn config set network-timeout 600000
+      # 2. Configure Yarn
+      - name: Set Yarn registry and timeout
+        run: |
+          yarn config set registry https://registry.yarnpkg.com
+          yarn config set network-timeout 600000
 
-    - name: Install `prebuild-install` (dev)
-      run: yarn add prebuild-install --dev
+      # 3. Install prebuilt dependencies (no build tools)
+      - name: Install node-pty-prebuilt
+        run: yarn add node-pty-prebuilt --ignore-scripts
 
-    - name: Try to fetch prebuilt native modules
-      run: |
-        # attempt to download prebuilt binaries for all native deps
-        npx prebuild-install || echo "No matching prebuilt binaries"
-        # if any native modules are still unbuilt, rebuild via your script
-        yarn rebuild-native
+      # 4. Install other dependencies
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
 
-    - name: Install dependencies
-      run: yarn install
+      # 5. Build project
+      - name: Build project
+        run: |
+          $env:TSC_COMPILE_ON_ERROR = "true"
+          $env:SKIP_PREFLIGHT_CHECK = "true"
+          yarn build-prod
 
-    - name: Build project
-      run: |
-        $env:TSC_COMPILE_ON_ERROR = "true"
-        $env:SKIP_PREFLIGHT_CHECK = "true"
-        yarn build-prod
+      # 6. Package for x64
+      - name: Package for x64
+        run: yarn pack:x64
 
-    - name: Package for x64
-      run: yarn pack:x64
+      # 7. Prepare artifacts
+      - name: Prepare release assets
+        run: |
+          if (!(Test-Path -Path "./bin")) {
+            New-Item -ItemType Directory -Force -Path "./bin"
+          }
+          $exeFile = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -First 1
+          Move-Item -Path $exeFile.FullName -Destination "./bin/app.exe"
+          
+          # Create a release tag (optional)
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
 
-    - name: Ensure bin directory exists
-      run: |
-        if (!(Test-Path -Path "./bin")) {
-          New-Item -ItemType Directory -Force -Path "./bin"
-        }
+      # 8. Upload build artifact (temporary storage)
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: electron-app
+          path: bin/
 
-    - name: Move package to bin directory
-      run: |
-        $outputPath = Get-ChildItem -Path . -Recurse -Filter "*.exe" | Select-Object -ExpandProperty FullName
-        Move-Item -Path $outputPath -Destination "./bin"
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Download the built artifact
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: electron-app
+          path: bin/
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: electron-app
-        path: bin/
+      # 2. Create GitHub Release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.RELEASE_VERSION }}
+          name: Release v${{ env.RELEASE_VERSION }}
+          body: "Auto-generated release for Electron app"
+          files: bin/app.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
