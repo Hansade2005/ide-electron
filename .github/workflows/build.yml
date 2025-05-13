@@ -46,7 +46,7 @@ jobs:
 
       # 6. Package for x64
       - name: Package for x64
-        run: yarn dist --dir=dist
+        run: yarn build-prod && yarn dist
 
       # 7. Prepare artifacts
       - name: Prepare release assets
